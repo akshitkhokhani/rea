@@ -141,6 +141,14 @@ const contextualCandidate = (
   exportsTargetUrl: boolean,
 ): string | ArtifactPathResolution => {
   const { context } = input;
+  // Classify bare names before URL suffix handling can change package identity.
+  if (
+    context === "module-specifier" &&
+    !hasScheme(input.declaredPath) &&
+    !input.declaredPath.startsWith(".") &&
+    !input.declaredPath.startsWith("/")
+  )
+    return bareModuleCandidate(input, input.declaredPath);
   let declared =
     context === "html-reference" ||
     context === "url-reference" ||
@@ -156,8 +164,6 @@ const contextualCandidate = (
       return unresolvedOutcome(input, "external", [
         "URL and Node builtin schemes are outside static artifact module resolution.",
       ]);
-    if (!declared.startsWith(".") && !declared.startsWith("/"))
-      return bareModuleCandidate(input, declared);
   } else if (looksExternal(declared))
     return unresolvedOutcome(input, "external", [
       "URL schemes and protocol-relative URLs are outside this local artifact path context.",
@@ -194,6 +200,10 @@ const bareModuleCandidate = (
   if (packageName === null || isBuiltin(declared) || declared.startsWith("#"))
     return unresolvedOutcome(input, "external", [
       "The bare specifier is a Node builtin, package import map, or invalid package name.",
+    ]);
+  if (input.moduleKind !== "require" && /[?#]/u.test(declared))
+    return unresolvedOutcome(input, "external", [
+      "Query and fragment separators in a bare ESM specifier do not identify an installed package; the original package name was retained.",
     ]);
   if (declared !== packageName)
     return unresolvedOutcome(input, "external", [

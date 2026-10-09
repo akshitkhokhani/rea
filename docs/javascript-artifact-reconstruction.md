@@ -299,7 +299,10 @@ the root `"."` entry. The resolver selects targets in declared order using the
 same conditional and invalid-entry handling as nested exports arrays.
 
 ESM relative module paths and selected package exports targets use URL suffix handling
-and one percent-decoding pass. CommonJS relative paths and legacy package main
+and one percent-decoding pass after the declaration is classified. Bare package names
+retain their exact identity: an ESM specifier such as `fixture?query` does not
+substitute the package `fixture`. CommonJS bare package names retain literal query
+and fragment punctuation. CommonJS relative paths and legacy package main
 fields retain literal filename punctuation. Exports targets must start with
 `./` and exclude `.`, `..`, and `node_modules` path segments, including their
 encoded forms, before URL normalization. Arrays skip invalid exports targets
